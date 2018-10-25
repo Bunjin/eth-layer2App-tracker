@@ -35,21 +35,21 @@ var _inherits3 = _interopRequireDefault(_inherits2);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Eth = require('ethjs-query');
-var EthContract = require('ethjs-contract');
-var Token = require('./token');
+
+var Layer2App = require('./layer2App');
 var BlockTracker = require('eth-block-tracker');
-var abi = require('human-standard-token-abi');
-var EventEmitter = require('events').EventEmitter;
+
+var SafeEventEmitter = require('safe-event-emitter');
 var deepEqual = require('deep-equal');
 
-var TokenTracker = function (_EventEmitter) {
-  (0, _inherits3.default)(TokenTracker, _EventEmitter);
+var Layer2AppTracker = function (_SafeEventEmitter) {
+  (0, _inherits3.default)(Layer2AppTracker, _SafeEventEmitter);
 
-  function TokenTracker() {
+  function Layer2AppTracker() {
     var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    (0, _classCallCheck3.default)(this, TokenTracker);
+    (0, _classCallCheck3.default)(this, Layer2AppTracker);
 
-    var _this = (0, _possibleConstructorReturn3.default)(this, (TokenTracker.__proto__ || (0, _getPrototypeOf2.default)(TokenTracker)).call(this));
+    var _this = (0, _possibleConstructorReturn3.default)(this, (Layer2AppTracker.__proto__ || (0, _getPrototypeOf2.default)(Layer2AppTracker)).call(this));
 
     _this.userAddress = opts.userAddress || '0x0';
     _this.provider = opts.provider;
@@ -59,14 +59,12 @@ var TokenTracker = function (_EventEmitter) {
       pollingInterval: pollingInterval
     });
 
-    _this.eth = new Eth(_this.provider);
-    _this.contract = new EthContract(_this.eth);
-    _this.TokenContract = _this.contract(abi);
+    var layer2Apps = opts.layer2Apps || [];
 
-    var tokens = opts.tokens || [];
+    console.log("Layer2AppTracker: ", layer2Apps);
 
-    _this.tokens = tokens.map(function (tokenOpts) {
-      return _this.createTokenFrom(tokenOpts);
+    _this.layer2Apps = layer2Apps.map(function (layer2AppOpts) {
+      return _this.createLayer2AppFrom(layer2AppOpts);
     });
 
     _this.running = true;
@@ -75,44 +73,52 @@ var TokenTracker = function (_EventEmitter) {
     return _this;
   }
 
-  (0, _createClass3.default)(TokenTracker, [{
+  (0, _createClass3.default)(Layer2AppTracker, [{
     key: 'serialize',
     value: function serialize() {
-      return this.tokens.map(function (token) {
-        return token.serialize();
+      return this.layer2Apps.map(function (layer2App) {
+        return layer2App.serialize();
       });
     }
   }, {
     key: 'updateBalances',
     value: function () {
       var _ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee() {
-        var _this2 = this;
-
-        var oldBalances;
+        var oldBalances, newBalances;
         return _regenerator2.default.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
                 oldBalances = this.serialize();
-                return _context.abrupt('return', _promise2.default.all(this.tokens.map(function (token) {
-                  return token.updateBalance();
-                })).then(function () {
-                  var newBalances = _this2.serialize();
-                  if (!deepEqual(newBalances, oldBalances)) {
-                    if (_this2.running) {
-                      _this2.emit('update', newBalances);
-                    }
-                  }
-                }).catch(function (reason) {
-                  _this2.emit('error', reason);
+                _context.prev = 1;
+                _context.next = 4;
+                return _promise2.default.all(this.layer2Apps.map(function (layer2App) {
+                  return layer2App.updateBalance();
                 }));
 
-              case 2:
+              case 4:
+                newBalances = this.serialize();
+
+                if (!deepEqual(newBalances, oldBalances)) {
+                  if (this.running) {
+                    this.emit('update', newBalances);
+                  }
+                }
+                _context.next = 11;
+                break;
+
+              case 8:
+                _context.prev = 8;
+                _context.t0 = _context['catch'](1);
+
+                this.emit('error', _context.t0);
+
+              case 11:
               case 'end':
                 return _context.stop();
             }
           }
-        }, _callee, this);
+        }, _callee, this, [[1, 8]]);
       }));
 
       function updateBalances() {
@@ -122,22 +128,21 @@ var TokenTracker = function (_EventEmitter) {
       return updateBalances;
     }()
   }, {
-    key: 'createTokenFrom',
-    value: function createTokenFrom(opts) {
+    key: 'createLayer2AppFrom',
+    value: function createLayer2AppFrom(opts) {
       var owner = this.userAddress;
       var address = opts.address,
-          symbol = opts.symbol,
-          balance = opts.balance,
-          decimals = opts.decimals;
+          name = opts.name,
+          balance = opts.balance;
 
-      var contract = this.TokenContract.at(address);
-      return new Token({ address: address, symbol: symbol, balance: balance, decimals: decimals, contract: contract, owner: owner });
+      var provider = this.provider;
+      return new Layer2App({ address: address, name: name, balance: balance, owner: owner, provider: provider });
     }
   }, {
     key: 'add',
     value: function add(opts) {
-      var token = this.createTokenFrom(opts);
-      this.tokens.push(token);
+      var layer2App = this.createLayer2AppFrom(opts);
+      this.layer2Apps.push(layer2App);
     }
   }, {
     key: 'stop',
@@ -146,7 +151,7 @@ var TokenTracker = function (_EventEmitter) {
       this.blockTracker.stop();
     }
   }]);
-  return TokenTracker;
-}(EventEmitter);
+  return Layer2AppTracker;
+}(SafeEventEmitter);
 
-module.exports = TokenTracker;
+module.exports = Layer2AppTracker;

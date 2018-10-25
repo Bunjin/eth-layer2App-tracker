@@ -1,0 +1,12 @@
+const SafeEventEmitter = require('safe-event-emitter')
+
+
+const paymentChannel = require("./build/contracts/PaymentChannel.json").abi
+const abi = paymentChannel.abi
+
+
+class paymentChannel extends SafeEventEmitter {
+
+}
+
+module.exports = Layer2AppTracker

@@ -1,7 +1,7 @@
 {
-  "name": "eth-token-tracker",
-  "version": "1.1.6",
-  "description": "A module for tracking Ethereum token balances over block changes.",
+  "name": "eth-layer2App-tracker",
+  "version": "1.0.0",
+  "description": "A module for tracking Ethereum layer2App state and balances.",
   "main": "dist/index.js",
   "scripts": {
     "compile": "babel --presets es2015,stage-3 --plugins transform-runtime -d dist/ lib/",
@@ -10,25 +10,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/flyswatter/eth-token-tracker.git"
+    "url": "git+ssh://git@github.com/bunjin/eth-layer2App-tracker.git"
   },
   "keywords": [
     "ethereum",
-    "tokens"
+    "layer2Apps"
   ],
-  "author": "Dan Finlay <dan@danfinlay.com>",
+  "author": "Vincent ELI <vincent.eli@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/flyswatter/eth-token-tracker/issues"
+    "url": "https://github.com/bunjin/eth-layer2App-tracker/issues"
   },
-  "homepage": "https://github.com/flyswatter/eth-token-tracker#readme",
+  "homepage": "https://github.com/bunjin/eth-layer2App-tracker#readme",
   "dependencies": {
     "deep-equal": "^1.0.1",
     "eth-block-tracker": "^1.0.7",
     "ethjs": "^0.3.6",
     "ethjs-contract": "^0.2.1",
     "ethjs-query": "^0.3.7",
-    "human-standard-token-abi": "^1.0.2",
     "safe-event-emitter": "^1.0.1"
   },
   "devDependencies": {
