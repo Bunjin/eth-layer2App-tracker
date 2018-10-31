@@ -34,11 +34,8 @@ var _inherits3 = _interopRequireDefault(_inherits2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var Eth = require('ethjs-query');
-
 var Layer2App = require('./layer2App');
 var BlockTracker = require('eth-block-tracker');
-
 var SafeEventEmitter = require('safe-event-emitter');
 var deepEqual = require('deep-equal');
 
@@ -136,7 +133,8 @@ var Layer2AppTracker = function (_SafeEventEmitter) {
           balance = opts.balance;
 
       var provider = this.provider;
-      return new Layer2App({ address: address, name: name, balance: balance, owner: owner, provider: provider });
+      var blockTracker = this.blockTracker;
+      return new Layer2App({ address: address, name: name, balance: balance, owner: owner, provider: provider, blockTracker: blockTracker });
     }
   }, {
     key: 'add',

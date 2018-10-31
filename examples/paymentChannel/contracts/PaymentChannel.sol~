@@ -1,6 +1,6 @@
 pragma solidity ^0.4.0;
 
-contract Channel {
+contract PaymentChannel {
 
 	address public channelSender;
 	address public channelRecipient;

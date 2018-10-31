@@ -2,50 +2,68 @@ pragma solidity ^0.4.0;
 
 contract PaymentChannel {
 
-	address public channelSender;
-	address public channelRecipient;
-	uint public startDate;
-	uint public channelTimeout;
-	mapping (bytes32 => address) signatures;
+  mapping (address => uint) public balance;
 
-	function Channel(address to, uint timeout) payable {
-		channelRecipient = to;
-		channelSender = msg.sender;
-		startDate = now;
-		channelTimeout = timeout;
-	}
+  mapping (bytes32 => address) signatures;
+  
+  constructor() {
+	  
+  }
 
-	function CloseChannel(bytes32 h, uint8 v, bytes32 r, bytes32 s, uint value){
+  function balanceOf(address owner) public constant returns(uint){
+    return balance[owner];
+  }
 
-		address signer;
-		bytes32 proof;
 
-		// get signer from signature
-		signer = ecrecover(h, v, r, s);
+  event Layer2Setup(address depositer, uint value_added, uint value_total, uint time);
+	
+  function setup(uint timeout) payable {
+    require(msg.value != 0);
+    address depositer = msg.sender;
+    uint value;
+    uint current_value = balance[depositer];
+    if ( current_value != 0) {
+      value = current_value + msg.value;
+    }
+    else {
+      value = msg.value;
+    }
+    balance[depositer] = value;
+    uint startDate = now;
+    emit Layer2Setup(depositer, msg.value, value, startDate);
+  }
+	
+  /* function CloseChannel(bytes32 h, uint8 v, bytes32 r, bytes32 s, uint value){ */
 
-		// signature is invalid, throw
-		if (signer != channelSender && signer != channelRecipient) throw;
+  /*   address signer; */
+  /*   bytes32 proof; */
 
-		proof = sha3(this, value);
+  /*   // get signer from signature */
+  /*   signer = ecrecover(h, v, r, s); */
 
-		// signature is valid but doesn't match the data provided
-		if (proof != h) throw;
+  /*   // signature is invalid, throw */
+  /*   if (signer != channelSender && signer != channelRecipient) throw; */
 
-		if (signatures[proof] == 0)
-			signatures[proof] = signer;
-		else if (signatures[proof] != signer){
-			// channel completed, both signatures provided
-			if (!channelRecipient.send(value)) throw;
-			selfdestruct(channelSender);
-		}
+  /*   proof = sha3(this, value); */
 
-	}
+  /*   // signature is valid but doesn't match the data provided */
+  /*   if (proof != h) throw; */
 
-	function ChannelTimeout(){
-		if (startDate + channelTimeout > now)
-			throw;
+  /*   if (signatures[proof] == 0) */
+  /*     signatures[proof] = signer; */
+  /*   else if (signatures[proof] != signer){ */
+  /*     // channel completed, both signatures provided */
+  /*     if (!channelRecipient.send(value)) throw; */
+  /*     selfdestruct(channelSender); */
+  /*   } */
 
-		selfdestruct(channelSender);
-	}
+  /* } */
+
+  /* function ChannelTimeout(){ */
+  /*   if (startDate + channelTimeout > now) */
+  /*     throw; */
+
+  /*   selfdestruct(channelSender); */
+  /* } */
 
 }
