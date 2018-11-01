@@ -61,8 +61,11 @@ var Layer2AppTracker = function (_SafeEventEmitter) {
     console.log("Layer2AppTracker: ", layer2Apps);
 
     _this.layer2Apps = layer2Apps.map(function (layer2AppOpts) {
-      return _this.createLayer2AppFrom(layer2AppOpts);
+      var app = _this.createLayer2AppFrom(layer2AppOpts);
+      return app;
     });
+
+    console.log("Layer2AppTracker after create: ", layer2Apps);
 
     _this.running = true;
     _this.blockTracker.on('latest', _this.updateBalances.bind(_this));

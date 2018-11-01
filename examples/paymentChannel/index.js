@@ -1,7 +1,6 @@
 const SafeEventEmitter = require('safe-event-emitter')
 const Eth = require('ethjs-query')
 const EthContract = require('ethjs-contract')
-const BlockTracker = require('eth-block-tracker')
 
 const paymentChannel = require("./build/contracts/PaymentChannel.json")
 const abi = paymentChannel.abi
@@ -23,45 +22,14 @@ class PaymentChannel extends SafeEventEmitter {
     this.owner = opts.owner
     this.contract = this.Layer2AppContract.at(this.address)
 
-    const pollingInterval = opts.pollingInterval || 4000
-    this.blockTracker = new BlockTracker({
-      provider: this.provider,
-      pollingInterval,
-    })
+    this.blockTracker = opts.blockTracker
 
-    this.update()
-    .catch((reason) => {
-      console.error('layer2App updating failed', reason)
-    })
-
-    this.registerContract()
-    .catch((reason) => {
-      console.error('Register contract failed updating failed', reason)
-    })
-
-    this.running = true
-    this.blockTracker.on('latest', this.updateBalance.bind(this))
-    this.blockTracker.start()
   }
 
-  async registerContract() {
-    console.log("RRRRRRRRRRRRRRRRREGIIIISTER", this.contract)
+  getLayer2AppContract() {
     return this.contract
   }
 
-  async update() {
-    const results = await Promise.all([
-      this.updateBalance(),
-    ])
-    this.isLoading = false
-    return results
-  }
-
-  async updateBalance() {
-    const balance = await this.updateValue('balance')
-    this.balance = balance
-    return this.balance
-  }
 
   async updateValue(key) {
     console.log("updateValue", key)

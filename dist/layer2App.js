@@ -39,6 +39,7 @@ var Layer2App = function () {
         provider = opts.provider,
         blockTracker = opts.blockTracker;
 
+    this.blockTracker = blockTracker;
     this.provider = provider;
     this.isLoading = !address || !balance;
     this.address = address || '0x0';
