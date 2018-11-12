@@ -1,0 +1,6 @@
+let logger = require('./lib/logger')
+
+let args = process.argv
+
+
+logger.debug('mode is %s', args[2])

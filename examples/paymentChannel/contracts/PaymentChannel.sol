@@ -22,15 +22,16 @@ contract PaymentChannel {
     address depositer = msg.sender;
     uint value;
     uint current_value = balance[depositer];
-    if ( current_value != 0) {
-      value = current_value + msg.value;
-    }
-    else {
-      value = msg.value;
-    }
+    value = current_value + msg.value;
+    /* if ( current_value != 0) { */
+    /*   value = current_value + msg.value; */
+    /* } */
+    /* else { */
+    /*   value = msg.value; */
+    /* } */
     balance[depositer] = value;
-    uint startDate = now;
-    emit Layer2Setup(depositer, msg.value, value, startDate);
+    uint lastDepositDate = now;
+    emit Layer2Setup(depositer, msg.value, value, lastDepositDate);
   }
 	
   /* function CloseChannel(bytes32 h, uint8 v, bytes32 r, bytes32 s, uint value){ */

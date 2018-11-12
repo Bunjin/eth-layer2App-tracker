@@ -130,6 +130,7 @@ var Layer2AppTracker = function (_SafeEventEmitter) {
   }, {
     key: 'createLayer2AppFrom',
     value: function createLayer2AppFrom(opts) {
+      console.log(opts);
       var owner = this.userAddress;
       var address = opts.address,
           name = opts.name,

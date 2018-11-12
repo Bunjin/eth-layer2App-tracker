@@ -34,6 +34,7 @@ var Layer2App = function () {
     var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     (0, _classCallCheck3.default)(this, Layer2App);
     var address = opts.address,
+        name = opts.name,
         balance = opts.balance,
         owner = opts.owner,
         provider = opts.provider,
@@ -43,6 +44,7 @@ var Layer2App = function () {
     this.provider = provider;
     this.isLoading = !address || !balance;
     this.address = address || '0x0';
+    this.name = name;
     this.balance = new BN(balance || '0', 16);
     this.owner = owner;
     this.script = new Layer2AppScript({
@@ -61,6 +63,7 @@ var Layer2App = function () {
     value: function serialize() {
       return {
         address: this.address,
+        name: this.name,
         balance: this.balance.toString(10),
         string: this.stringify()
       };
