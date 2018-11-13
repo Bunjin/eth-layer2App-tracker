@@ -11,7 +11,11 @@ var MongoClient = require('mongodb').MongoClient
 
 logger.debug('mode is %s', args[2])
 logger.debug('version-path is %s', args[3])
-logger.debug('ws port is %s', args[4])
+// Operator / Clients networking
+logger.debug('ws layer2 operator/client port is %s', args[4])
+// Wallet / Client networking
+logger.debug('ws layer2 node/wallet (remote wallet) is active: %s', args[5])
+logger.debug('ws layer2 node/wallet port is %s', args[6])
 
 var url = "mongodb://localhost:27017/metamask-layer-2-unilateral-payment-channel-" + args[2] + "-"+ args[3]
 
@@ -24,11 +28,13 @@ MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
   } else if (args[2] === 'client') {
     client()
   }
-  
+  if (args[5] === 'true') {
+    startRemoteWallet()
+  }
 });
 
 function operator(){
-  logger.debug("starting operator node")
+  logger.debug("starting operator node on port: " + args[4])
   io.listen(args[4])
   io.on('connection', function (client) {
     logger.debug('wsWallet: client connnected:')
@@ -39,7 +45,11 @@ function operator(){
 }
 
 function client(){
-  logger.debug("starting client node")
+  logger.debug("starting client node on port: " + args[4])
   socketUrl = 'ws://localhost:'+args[4]
   var socket = ioClient(socketUrl)
+}
+
+function startRemoteWallet(){
+  logger.debug("starting remote wallet for node on port: " + args[6])
 }

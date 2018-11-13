@@ -22,7 +22,9 @@ Nodes:
     receives and stores all txes
     allows to verify integrity of channels
     allows to monitor and contest on chain withdrawals
-  -remote client:
+
+
+remote wallet (node/wallet):
     metamask layer 2 app script
 
 
