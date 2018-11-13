@@ -1,6 +1,11 @@
 network?="dev"
 
-all: deploy
+all: deploy start
+
+kill:
+	sudo pkill -f "layer2-node.js"
+
+start: startOperator && startClient
 
 deploy:
 	truffle compile --force && truffle migrate --reset --network $(network)

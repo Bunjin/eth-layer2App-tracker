@@ -6,6 +6,7 @@ let path = require('path')
 let mkdirp = require('mkdirp')
 
 var io = require('socket.io')()
+var ioRemoteWallet = require('socket.io')()
 var ioClient = require('socket.io-client')
 var MongoClient = require('mongodb').MongoClient
 
@@ -37,19 +38,26 @@ function operator(){
   logger.debug("starting operator node on port: " + args[4])
   io.listen(args[4])
   io.on('connection', function (client) {
-    logger.debug('wsWallet: client connnected:')
+    logger.debug('operator node: client %s node connnected:', client)
     client.on('message', async function (message, cb) {
-        logger.debug('wsWallet: received: %s', message)
+      logger.debug('operator node: received: %s , from client: %s', message, client) 
     })
   })
 }
 
 function client(){
   logger.debug("starting client node on port: " + args[4])
-  socketUrl = 'ws://localhost:'+args[4]
+  socketUrl = 'ws://localhost:' + args[4]
   var socket = ioClient(socketUrl)
 }
 
 function startRemoteWallet(){
   logger.debug("starting remote wallet for node on port: " + args[6])
+  ioRemoteWallet.listen(args[6])  
+  ioRemoteWallet.on('connection', function (client) {
+    logger.debug('wsRemoteWallet: client connnected:')
+    client.on('message', async function (message, cb) {
+        logger.debug('wsWallet: received: %s', message)
+    })
+  })
 }
