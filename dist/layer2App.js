@@ -35,6 +35,7 @@ var Layer2App = function () {
     (0, _classCallCheck3.default)(this, Layer2App);
     var address = opts.address,
         name = opts.name,
+        nodeUrl = opts.nodeUrl,
         balance = opts.balance,
         owner = opts.owner,
         provider = opts.provider,
@@ -45,12 +46,14 @@ var Layer2App = function () {
     this.isLoading = !address || !balance;
     this.address = address || '0x0';
     this.name = name;
+    this.nodeUrl = nodeUrl;
     this.balance = new BN(balance || '0', 16);
     this.owner = owner;
     this.script = new Layer2AppScript({
       blockTracker: this.blockTracker,
       provider: this.provider,
       address: this.address,
+      nodeUrl: this.nodeUrl,
       owner: this.owner
     });
     this.update().catch(function (reason) {
@@ -64,6 +67,7 @@ var Layer2App = function () {
       return {
         address: this.address,
         name: this.name,
+        nodeUrl: this.nodeUrl,
         balance: this.balance.toString(10),
         string: this.stringify()
       };

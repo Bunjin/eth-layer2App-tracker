@@ -3,10 +3,7 @@ const Eth = require('ethjs-query')
 const EthContract = require('ethjs-contract')
 
 const ioClient = require('socket.io-client')
-// for now connect remote wallet to operator with 8009 and to clinet with 8010
-const socketPort = 8009
-const socketUrl = 'ws://localhost:'+ socketPort
-var socket = ioClient(socketUrl)
+
 
 const paymentChannel = require("./build/contracts/PaymentChannel.json")
 const abi = paymentChannel.abi
@@ -29,7 +26,9 @@ const layer2Abi = {
 class PaymentChannel extends SafeEventEmitter {
   constructor (opts = {}) {
     super()
-
+    this.nodeUrl = opts.nodeUrl
+    const socket = ioClient(this.nodeUrl)
+    console.log("connecting to layer2 node:" + this.nodeUrl)
     this.layer2Abi = layer2Abi
     //INTRODUCE HERE A LAYER2TRACKER HOOKED TO THE PROVIDER TO WATCH THE LAYER 2 STATE
     this.address = opts.address

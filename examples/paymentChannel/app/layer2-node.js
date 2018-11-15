@@ -52,7 +52,7 @@ function client(){
 }
 
 function startRemoteWallet(){
-  logger.debug("starting remote wallet for node on port: " + args[6])
+  logger.debug("starting remote wallet for node on url: ws://localhost:" + args[6])
   ioRemoteWallet.listen(args[6])  
   ioRemoteWallet.on('connection', function (client) {
     logger.debug('wsRemoteWallet: client connnected:')

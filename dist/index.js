@@ -134,11 +134,12 @@ var Layer2AppTracker = function (_SafeEventEmitter) {
       var owner = this.userAddress;
       var address = opts.address,
           name = opts.name,
-          balance = opts.balance;
+          balance = opts.balance,
+          nodeUrl = opts.nodeUrl;
 
       var provider = this.provider;
       var blockTracker = this.blockTracker;
-      return new Layer2App({ address: address, name: name, balance: balance, owner: owner, provider: provider, blockTracker: blockTracker });
+      return new Layer2App({ address: address, name: name, nodeUrl: nodeUrl, balance: balance, owner: owner, provider: provider, blockTracker: blockTracker });
     }
   }, {
     key: 'add',
