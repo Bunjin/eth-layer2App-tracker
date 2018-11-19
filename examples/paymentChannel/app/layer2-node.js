@@ -56,8 +56,29 @@ function startRemoteWallet(){
   ioRemoteWallet.listen(args[6])  
   ioRemoteWallet.on('connection', function (client) {
     logger.debug('wsRemoteWallet: client connnected:')
-    client.on('message', async function (message, cb) {
-        logger.debug('wsWallet: received: %s', message)
+    client.on('registerDeposit', async function (message, signature, cb) {
+      logger.debug('wsWallet: received registerDeposit:')
+      logger.debug('message: %s', message)
+      logger.debug('signature: %s', signature)
+      cb()
+    })
+    client.on('makePayment', async function (message, cb) {
+      logger.debug('wsWallet: received makePayment:')
+      logger.debug('message: %s', message)
+      logger.debug('signature: %s', signature)
+      cb()
+    })
+    client.on('withdrawPayment', async function (message, cb) {
+      logger.debug('wsWallet: received withdrawPayment:')
+      logger.debug('message: %s', message)
+      logger.debug('signature: %s', signature)
+      cb()
+    })
+    client.on('withdrawDeposit', async function (message, cb) {
+      logger.debug('wsWallet: received withdrawDeposit:')
+      logger.debug('message: %s', message)
+      logger.debug('signature: %s', signature)
+      cb()
     })
   })
 }
