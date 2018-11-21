@@ -4,7 +4,13 @@ contract PaymentChannel {
 
   mapping (address => uint) public balance;
 
-  mapping (bytes32 => address) signatures;
+  struct Deposit {
+    address depositer;
+    uint nonce;
+    uint value;
+  }
+  mapping (bytes32 => Deposit) public depositByCustomHash;
+  mapping (address => bytes32[]) public depositCustomHashesByAddress;
   
   constructor() {
 	  
@@ -14,24 +20,22 @@ contract PaymentChannel {
     return balance[owner];
   }
 
-
-  event Layer2Setup(address depositer, uint value_added, uint value_total, uint time);
+  event Layer2Setup(address depositer, uint value_added, uint value_total, uint time, bytes32 depositCustomHash);
 	
-  function setup(uint timeout) payable {
+  function setup(uint timeout) payable returns (bytes32){
     require(msg.value != 0);
     address depositer = msg.sender;
     uint value;
     uint current_value = balance[depositer];
     value = current_value + msg.value;
-    /* if ( current_value != 0) { */
-    /*   value = current_value + msg.value; */
-    /* } */
-    /* else { */
-    /*   value = msg.value; */
-    /* } */
     balance[depositer] = value;
     uint lastDepositDate = now;
-    emit Layer2Setup(depositer, msg.value, value, lastDepositDate);
+    uint nonce = depositCustomHashesByAddress[msg.sender].length;
+    bytes32 depositCustomHash = keccak256(now, msg.sender, nonce);
+    depositByCustomHash[depositCustomHash] = Deposit(msg.sender, nonce, msg.value);
+    depositCustomHashesByAddress[msg.sender].push(depositCustomHash);
+    emit Layer2Setup(depositer, msg.value, value, lastDepositDate, depositCustomHash);
+    return depositCustomHash; 
   }
 	
   /* function CloseChannel(bytes32 h, uint8 v, bytes32 r, bytes32 s, uint value){ */

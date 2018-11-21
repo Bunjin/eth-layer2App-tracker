@@ -3,7 +3,6 @@ Unilateral payment channel:
 Actions:
 -Deposit into layer2 (on chain)
 -If on chain deposit: Send payment/gift to any given address (offchain)
--If off chain allowance (after receiving a payment): Transfer
 -Close deposit channel (for withdraw)
 -Withdraw your balance:
   -off chain allowance (gifts received)
@@ -12,7 +11,7 @@ Actions:
 
 Nodes:
 
--One operator in POA:
+-One operator:
   -network: receives and broadcasts messages
   -layer 2 permissions: none
 
@@ -28,9 +27,6 @@ remote wallet (node/wallet):
     metamask layer 2 app script
 
 
-Problems:
--Double spend?
-  -use challenge periods to avoid that
-  if higher nonce... ?
-  -use operator to allow faster withdrawals
-  
+Todo:
+
+- reset mongo DB
