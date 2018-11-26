@@ -81,19 +81,38 @@ function startRemoteWallet(){
       })
 
     })
-    client.on('makePayment', async function (message, cb) {
+    client.on('makePayment', async function (message, signature, cb) {
       logger.debug('wsWallet: received makePayment:')
-      logger.debug('message: %s', message)
+      logger.debug('message: %s', JSON.stringify(message))
       logger.debug('signature: %s', signature)
+      subsignature = signature.substring(2)
+      const r = "0x" + subsignature.substring(0, 64);
+      const s = "0x" + subsignature.substring(64, 128);
+      const v = parseInt(subsignature.substring(128, 130), 16);
+      console.log(r)
+      console.log(s)
+      console.log(v)
+      processPaymentMessage(message, ()=>{
+	recordMessageInDB(message, signature, cb)
+      })
+    })
+    client.on('requestWithdrawPayment', async function (message, cb) {
+      logger.debug('wsWallet: received withdrawPayment:')
+      logger.debug('message: %s', message)
       cb()
     })
     client.on('withdrawPayment', async function (message, cb) {
       logger.debug('wsWallet: received withdrawPayment:')
       logger.debug('message: %s', message)
+      cb()
+    })
+    client.on('withdrawDeposit', async function (message, signature, cb) {
+      logger.debug('wsWallet: received withdrawDeposit:')
+      logger.debug('message: %s', message)
       logger.debug('signature: %s', signature)
       cb()
     })
-    client.on('withdrawDeposit', async function (message, cb) {
+    client.on('requestWithdrawDeposit', async function (message, signature, cb) {
       logger.debug('wsWallet: received withdrawDeposit:')
       logger.debug('message: %s', message)
       logger.debug('signature: %s', signature)
@@ -103,7 +122,7 @@ function startRemoteWallet(){
       logger.debug('wsWallet: received getLatestMessage:')
       logger.debug('address: %s', address)
       getLatestMessageInfoFromDB(address, (document)=>{
-	logger.debug("latest message is: %s", document)
+	logger.debug("latest message is: %s", JSON.stringify(document))
 	cb(document)
       })
     })
@@ -116,6 +135,15 @@ function startRemoteWallet(){
       })
 
     })
+    client.on("getState", async function (address, cb) {
+      //logger.debug('wsWallet: received getState:')
+      //logger.debug('address: %s', address)
+      getState(address, (document)=>{
+	//logger.debug("account state is: %s", JSON.stringify(document))
+	cb(document)
+      })
+    })
+    
   })
 }
 
@@ -145,7 +173,24 @@ function processDepositMessage(message, cb){
     var document = { account: message.sender.address,
 		     deposited: message.sender.balance}
     logger.debug("Saving in DB %s", JSON.stringify(document))
-    dbo.collection("accounts").updateOne({"address":document.account}, {$set: {"deposited": document.deposited}}, ()=>{
+    dbo.collection("accounts").updateOne({"address":document.account}, {$set: {"deposited": document.deposited}}, {upsert: true}, ()=>{
+      cb()
+    })
+  })
+}
+
+function processPaymentMessage(message, cb){
+  MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+    if (err) throw err
+    var dbo = db.db(DBNAME)
+    var document = { account: message.sender.address,
+		     deposited: message.sender.balance,
+		     paid: {"recipient1": message.recipient1,
+			    "recipient2": message.recipient2
+			   }
+		   }
+    logger.debug("Saving in DB %s", JSON.stringify(document))
+    dbo.collection("accounts").updateOne({"address":document.account}, {$set: {"deposited": document.deposited, "paid": message.recipient1}}, {upsert: true}, ()=>{
       cb()
     })
   })
@@ -158,7 +203,7 @@ function getLatestMessageInfoFromDB(address, cb){
 
       dbo.collection("signaturesByAddress").findOne({address: address}, {'sort': [["nonce", "desc"]]}, function(err, document){
 	if (document){
-	  logger.debug("Fetching in DB %s", JSON.stringify(document))
+	  //logger.debug("Fetching in DB %s", JSON.stringify(document))
 	  cb(document.signature)
 	}
 	else {
@@ -176,12 +221,31 @@ function getMessageFromDB(signature, cb){
 
     dbo.collection("messagesBySignature").findOne({signature: signature}, function(err, document){
       if (document){
-	logger.debug("Fetching in DB %s", JSON.stringify(document))
+	//logger.debug("Fetching in DB %s", JSON.stringify(document))
 	cb(document.message)
       }
       else{
 	logger.debug("Fetching Message in DB: no document found")	
       }
+    })
+  })
+}
+
+
+function getState(address, cb){
+    MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+    if (err) throw err
+    var dbo = db.db(DBNAME)
+
+      dbo.collection("accounts").findOne({address: address}, function(err, document){
+	if (document){
+	  //logger.debug("Fetching in DB %s", JSON.stringify(document))
+	  cb(document)
+	}
+	else {
+	  //logger.debug("User not found")
+	  cb('User not found')
+	}
     })
   })
 }

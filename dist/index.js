@@ -55,6 +55,7 @@ var Layer2AppTracker = function (_SafeEventEmitter) {
       provider: _this.provider,
       pollingInterval: pollingInterval
     });
+    _this.networkId = opts.networkId;
 
     var layer2Apps = opts.layer2Apps || [];
 
@@ -139,7 +140,8 @@ var Layer2AppTracker = function (_SafeEventEmitter) {
 
       var provider = this.provider;
       var blockTracker = this.blockTracker;
-      return new Layer2App({ address: address, name: name, nodeUrl: nodeUrl, balance: balance, owner: owner, provider: provider, blockTracker: blockTracker });
+      var networkId = this.networkId;
+      return new Layer2App({ address: address, name: name, nodeUrl: nodeUrl, balance: balance, owner: owner, provider: provider, blockTracker: blockTracker, networkId: networkId });
     }
   }, {
     key: 'add',

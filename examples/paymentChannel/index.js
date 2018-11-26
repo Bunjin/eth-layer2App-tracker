@@ -11,7 +11,8 @@ const abi = paymentChannel.abi
 class PaymentChannel extends SafeEventEmitter {
   constructor (opts = {}) {
     super()
-
+    // TODO receive state from previous from opts at tracker creation(like balance)
+    this.layer2State = ''
     this.nodeUrl = opts.nodeUrl
     this.socket = ioClient(this.nodeUrl)
     this.address = opts.address
@@ -40,7 +41,7 @@ class PaymentChannel extends SafeEventEmitter {
 			{name: "value",
 			 type: "uint"}
 		       ]},
-	       {name: "withdrawPayment",
+	       {name: "requestWithdrawPayment",
 		call:this.withdrawPayment.bind(this),
 		params:[{name:"fromAddress",
 			 type:"address"},
@@ -48,9 +49,23 @@ class PaymentChannel extends SafeEventEmitter {
 			 type:"string"}
 		       ]
 	       },
+	       {name: "withdrawPayment",
+		call:this.withdrawPayment.bind(this),
+		params:[{name:"requestWPNonce",
+			 type:"uint"}
+		       ]
+	       },
+	       {name: "requestWithdrawDeposit",
+		call:this.withdrawDeposit.bind(this),
+	       	params:[{name:"amountWithdrawn",
+			 type:"uint"}
+		       ]
+	       },
 	       {name: "withdrawDeposit",
 		call:this.withdrawDeposit.bind(this),
-	       	params:[]
+	       	params:[{name:"requestWDNonce",
+			 type:"uint"
+			}]
 	       }
 	      ],
       state:[{name: "paymentAllowance",
@@ -86,9 +101,6 @@ class PaymentChannel extends SafeEventEmitter {
       {name: "address", type: "address"},
       {name: "balance", type: "uint256"}
     ]
-
-    console.log(eth)
-    console.log(this.state)
     //Todo: chainId use network id
     this.domainData = {
       name: "MetaMask Payment Channel Example",
@@ -101,7 +113,7 @@ class PaymentChannel extends SafeEventEmitter {
   }
 
   async registerDeposit(params){
-    let socket = this.socket
+    const socket = this.socket
     console.log("REGISTER DEPOSIT ", params)
     const depositNonce = params[0]
     const depositCustomHash = (await this.contract["depositCustomHashesByAddress"](this.owner, depositNonce))[0]
@@ -109,6 +121,10 @@ class PaymentChannel extends SafeEventEmitter {
     console.log("Custom hash ", depositCustomHash)
     console.log("EVM record ", deposit)
     const value = deposit.value
+    console.log("DEBUG DEBUG DEPOSIT", value)
+    console.log("DEBUG DEBUG DEPOSIT", value.toString(10))    
+    console.log("DEBUG DEBUG DEPOSIT", typeof(value))
+  
     
     socket.emit("getLatestMessageInfo", this.owner, async (previousSignature)=>{
       console.log("GETTING PREVIOUS SIG FROM USER")
@@ -125,7 +141,7 @@ class PaymentChannel extends SafeEventEmitter {
 	  }
 	}
 
-	this.signMessage(message)
+	this.signMessage(message, "registerDeposit")
 	
       }
       else {
@@ -147,14 +163,95 @@ class PaymentChannel extends SafeEventEmitter {
 	  previousValue = new BN(previousValue, 16)
 	  console.log("PREVIOUS VALUE", previousValue)
 	  message.sender.balance = previousValue.add(value).toJSON()
-	  this.signMessage(message)
+	  this.signMessage(message, "registerDeposit")
 	})
 
       }
     })
   }
 		
-  async signMessage(message){
+  
+  makePayment(params){
+    console.log("MAKE PAYMENT")
+    console.log(params)
+    let toAddress = params[0]
+    let value = params[1]*1e18
+    console.log("DEBUGDEBUG before BN")    
+    console.log(value)
+    value = new BN(value.toString(), 10)
+    console.log("DEBUGDEBUG in BN")
+    console.log(value)
+    console.log(value.toString(10))    
+    console.log(typeof(value))    
+//    value = value.mul(new BN(10, 10).pow(new BN(18)))
+    const socket = this.socket
+    socket.emit("getLatestMessageInfo", this.owner, async (previousSignature)=>{
+      console.log("GETTING PREVIOUS SIG FROM USER")
+      console.log(previousSignature)
+      let message
+      if (previousSignature == "0x0"){
+	// first action must be register deposit
+	return
+      }
+      else {
+	
+	socket.emit("getMessageBySignature", previousSignature, async (previousMessage)=>{
+	  console.log("PREVIOUS MESSAGE FROM USER")
+	  console.log(previousMessage)
+	  
+	  message = previousMessage
+	  console.log(message)
+	  console.log(message.nonce)
+	  console.log(typeof(message.nonce))
+	  message.nonce = message.nonce + 1
+	  console.log(message.nonce)
+	  console.log(typeof(message.nonce))
+	  message.previousSignature = previousSignature
+	  message.depositCustomHash = "0x0"
+	  let previousValue = message.sender.balance
+	  previousValue = new BN(previousValue, 16)
+	  console.log("PREVIOUS VALUE", previousValue)
+	  if (previousValue < value){
+	    alert("not enough available deposit")
+	    return
+	  }
+	  message.sender.balance = previousValue.sub(value).toJSON()
+	  if (message.recipient1){
+	    if (message.recipient1.address == toAddress){
+	      previousRecipientValue = new BN(message.recipient1.value, 16)
+	      message.recipient1.value = previousRecipientValue.add(value).toJSON()
+	    }
+	  }
+	  else{
+	      message.recipient1 = {
+		account: toAddress,
+		value: value.toJSON()
+	      }
+
+	  }
+    	  this.signMessage(message, "makePayment")
+	})
+
+      }
+    })
+
+  }
+
+  withdrawPayment(params){
+    console.log(params)
+    this.socket.emit("withdrawPayment")
+  }
+
+  withdrawDeposit(params){
+    console.log(params)    
+    this.socket.emit("withdrawDeposit")
+  }
+  
+  getLayer2AppContract() {
+    return this.contract
+  }
+
+  async signMessage(message, socketEvent){
     let socket = this.socket
     console.log(message)
     console.log(typeof(message))
@@ -189,35 +286,21 @@ class PaymentChannel extends SafeEventEmitter {
 	// console.log("r: ", r)
 	// console.log("s: ", s)
 	// console.log("v: ", v)
-	socket.emit("registerDeposit", message, signature, ()=> {
-	  console.log("deposit registered")
+	console.log(socketEvent + " will be fired ", message, signature)	
+	socket.emit(socketEvent, message, signature, ()=> {
+	  console.log(socketEvent + " fired ", message, signature)
 	})
       }
     )
   }
-  
-  makePayment(params){
-    console.log("MAKE PAYMENT")
-    console.log(params)
-    let toAddress = params[0]
-    let value = params[1]
-    this.socket.emit("makePayment", toAddress)
-  }
 
-  withdrawPayment(params){
-    console.log(params)
-    this.socket.emit("withdrawPayment")
+  async updateLayer2State(cb){
+    let socket = this.socket
+    socket.emit("getState", this.owner, async (state)=>{
+      this.layer2State = state
+      cb(state)
+    })
   }
-
-  withdrawDeposit(params){
-    console.log(params)    
-    this.socket.emit("withdrawDeposit")
-  }
-  
-  getLayer2AppContract() {
-    return this.contract
-  }
-
 
   async updateValue(key) {
     console.log("updateValue", key)

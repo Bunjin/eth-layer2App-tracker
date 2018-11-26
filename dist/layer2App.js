@@ -39,7 +39,8 @@ var Layer2App = function () {
         balance = opts.balance,
         owner = opts.owner,
         provider = opts.provider,
-        blockTracker = opts.blockTracker;
+        blockTracker = opts.blockTracker,
+        networkId = opts.networkId;
 
     this.blockTracker = blockTracker;
     this.provider = provider;
@@ -54,8 +55,12 @@ var Layer2App = function () {
       provider: this.provider,
       address: this.address,
       nodeUrl: this.nodeUrl,
-      owner: this.owner
+      owner: this.owner,
+      networkId: this.networkId
     });
+    // TODO: make updates event based
+    var updateLayer2State = this.updateLayer2State.bind(this);
+    setInterval(updateLayer2State, 1000);
     this.update().catch(function (reason) {
       console.error('layer2App updating failed', reason);
     });
@@ -88,7 +93,7 @@ var Layer2App = function () {
             switch (_context.prev = _context.next) {
               case 0:
                 _context.next = 2;
-                return _promise2.default.all([this.updateBalance()]);
+                return _promise2.default.all([this.updateBalance(), this.updateLayer2State()]);
 
               case 2:
                 results = _context.sent;
@@ -141,6 +146,41 @@ var Layer2App = function () {
       }
 
       return updateBalance;
+    }()
+  }, {
+    key: 'updateLayer2State',
+    value: function () {
+      var _ref3 = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee3() {
+        var _this = this;
+
+        var state;
+        return _regenerator2.default.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _context3.next = 2;
+                return this.script.updateLayer2State(function (state) {
+                  _this.layer2State = state;
+                  //console.log("layer 2 state ", state)
+                  return _this.layer2State;
+                });
+
+              case 2:
+                state = _context3.sent;
+
+              case 3:
+              case 'end':
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function updateLayer2State() {
+        return _ref3.apply(this, arguments);
+      }
+
+      return updateLayer2State;
     }()
   }]);
   return Layer2App;
