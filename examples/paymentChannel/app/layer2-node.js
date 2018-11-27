@@ -1,4 +1,5 @@
 let logger = require('./lib/logger')
+const assert = require('assert');
 
 let args = process.argv
 let os = require('os')
@@ -9,6 +10,8 @@ var io = require('socket.io')()
 var ioRemoteWallet = require('socket.io')()
 var ioClient = require('socket.io-client')
 var MongoClient = require('mongodb').MongoClient
+
+const BN = require('ethereumjs-util').BN
 
 logger.debug('mode is %s', args[2])
 logger.debug('version-path is %s', args[3])
@@ -77,7 +80,11 @@ function startRemoteWallet(){
       // TODO update Balances
       // TODO make this process atomic
       processDepositMessage(message, ()=>{
-	recordMessageInDB(message, signature, cb)
+	recordMessageInDB(message, signature, ()=>{
+	  getState(message.sender.address, (state)=>{
+	    client.emit("updateState", state, cb)
+	  })
+	})
       })
 
     })
@@ -93,7 +100,12 @@ function startRemoteWallet(){
       console.log(s)
       console.log(v)
       processPaymentMessage(message, ()=>{
-	recordMessageInDB(message, signature, cb)
+	recordMessageInDB(message, signature, ()=>{
+	  getState(message.sender.address, (state)=>{	  
+	    client.emit("updateState", state, cb)
+	    //need to emit also to recipient of payment (should have a mapping client/address)
+	  })
+	})
       })
     })
     client.on('requestWithdrawPayment', async function (message, cb) {
@@ -135,12 +147,14 @@ function startRemoteWallet(){
       })
 
     })
+    // Client request states on load or block changes
     client.on("getState", async function (address, cb) {
-      //logger.debug('wsWallet: received getState:')
-      //logger.debug('address: %s', address)
+      logger.debug('wsWallet: received getState:')
+      logger.debug('address: %s', address)
       getState(address, (document)=>{
-	//logger.debug("account state is: %s", JSON.stringify(document))
-	cb(document)
+    	logger.debug("After db, account is: %s", address)
+    	logger.debug("After db, document is: %s", document)	
+    	cb(document)
       })
     })
     
@@ -170,10 +184,10 @@ function processDepositMessage(message, cb){
   MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
     if (err) throw err
     var dbo = db.db(DBNAME)
-    var document = { account: message.sender.address,
+    var document = { address: message.sender.address,
 		     deposited: message.sender.balance}
     logger.debug("Saving in DB %s", JSON.stringify(document))
-    dbo.collection("accounts").updateOne({"address":document.account}, {$set: {"deposited": document.deposited}}, {upsert: true}, ()=>{
+    dbo.collection("accounts").updateOne({"address":document.address}, {$set: {"deposited": document.deposited}}, {upsert: true}, ()=>{
       cb()
     })
   })
@@ -183,15 +197,102 @@ function processPaymentMessage(message, cb){
   MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
     if (err) throw err
     var dbo = db.db(DBNAME)
-    var document = { account: message.sender.address,
-		     deposited: message.sender.balance,
-		     paid: {"recipient1": message.recipient1,
-			    "recipient2": message.recipient2
-			   }
-		   }
-    logger.debug("Saving in DB %s", JSON.stringify(document))
-    dbo.collection("accounts").updateOne({"address":document.account}, {$set: {"deposited": document.deposited, "paid": message.recipient1}}, {upsert: true}, ()=>{
-      cb()
+
+//     { "_id" : ObjectId("5bfc39d6c813cf256ff7d31d"), "address" : "0x6ccb1def4ff8c4b953b084a220ec51817b65fd87", "deposited" : "0", "paid" : { "recipient1" : { "address" : "0x3af763d5c93165a13778a4904e60d00193973c15", "value" : "de0b6b3a7640000" }, "recipient2" : {  } } }
+// { "_id" : ObjectId("5bfc39dfc813cf256ff7d31e"), "address" : "0x3af763d5c93165a13778a4904e60d00193973c15", "totalReceived" : "de0b6b3a7640000", "received" : { "from" : "" } }
+
+    let totalReceivedFrom
+    let recipient
+    console.log(message.sender)
+    dbo.collection("accounts").findOne({address: message.sender.address}, (err, previousSenderDocument)=>{
+      console.log(previousSenderDocument)
+      if (!previousSenderDocument.paid){
+	totalReceivedFrom = new BN(message.recipient1.value, 16)
+	recipient = message.recipient1.address
+      }
+      else {
+	if (message.recipient1.address == previousSenderDocument.paid.recipient1.address){
+	  if (message.recipient1.value == previousSenderDocument.paid.recipient1.value){
+	    if (!previousSenderDocument.paid.recipient2){
+	      totalReceivedFrom = new BN(message.recipient2.value, 16)
+	      recipient = message.recipient2.address
+	    }
+	    else {
+	      if (message.recipient2.address == previousSenderDocument.paid.recipient2.address){
+		if (message.recipient2.value == previousSenderDocument.paid.recipient2.value){
+		  logger.error("Payment made but no recipient value changed ??")
+		}
+		else {
+		  // this is the recipient
+		  try{
+		    assert.strictEqual((new BN(message.recipient2.value, 16)).gt(new BN(previousSenderDocument.paid.recipient2.value)), true)
+		  }
+		  catch (err){
+		    logger.error("can't decrease recipient value ")
+		    logger.error(err)
+		  }
+		  totalReceivedFrom = new BN(message.recipient2.value, 16)
+		  recipient = message.recipient2.address
+		}
+	      }
+	      else {
+		logger.error("Error recipient address changed")
+		cb("Error recipient address changed")
+	      }
+	    }
+	  }
+	  else {
+	    // this is the recipient
+	    try{
+	      assert.strictEqual((new BN(message.recipient1.value, 16)).gt(new BN(previousSenderDocument.paid.recipient1.value)), true)	    
+	    }
+	    catch (err){
+	      logger.error("can't decrease recipient value ")
+	      logger.error(err)
+	    }
+	    totalReceivedFrom = new BN(message.recipient1.value, 16)
+	    recipient = message.recipient1.address
+	    
+	  }
+	}
+	else {
+	  logger.error("Error recipient address changed")
+	  cb("Error recipient address changed")
+	}
+      }
+      dbo.collection("accounts").updateOne({"address": message.sender.address}, {$set: {"deposited": message.sender.balance, "paid": {"recipient1": message.recipient1, "recipient2": message.recipient2}}}, {upsert: true}, ()=>{
+	// TODO search balance of recipient in Json message
+	dbo.collection("accounts").findOne({"address": recipient}, (err, previousRecipientDocument)=>{
+	  let totalReceived
+	  if (previousRecipientDocument){
+	    totalReceived = new BN(previousRecipientDocument.totalReceived, 16)
+	    totalReceived = totalReceived.add(totalReceivedFrom)
+	  }
+	  else {
+	    totalReceived = totalReceivedFrom
+	  }
+	  let receivedPaymentsList
+	  if (previousRecipientDocument && previousRecipientDocument.received){
+	    const previousFromIndex = previousRecipientDocument.received.map((a)=>a.from).indexOf(message.sender.address)
+	    console.log("previous from index")
+	    console.log(previousFromIndex)
+	    if (previousFromIndex != -1){
+	      receivedPaymentsList = previousRecipientDocument.received
+	      receivedPaymentsList[previousFromIndex].value = totalReceivedFrom.toJSON()
+	    }
+	    else {
+	      receivedPaymentsList.append({"from": message.sender.address, "value": totalReceivedFrom.toJson()})
+	    }
+	  }
+	  else {
+	    receivedPaymentsList = [{"from": message.sender.address, "value": totalReceivedFrom.toJSON()}]	    
+	  }
+
+	  dbo.collection("accounts").updateOne({"address": recipient}, {$set: {"totalReceived": totalReceivedFrom.toJSON(), "received": receivedPaymentsList}}, {upsert: true}, ()=>{
+	    cb()
+	  })
+	})
+      })
     })
   })
 }
@@ -233,19 +334,20 @@ function getMessageFromDB(signature, cb){
 
 
 function getState(address, cb){
-    MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+  logger.debug("get state for address: " + address)
+  MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
     if (err) throw err
     var dbo = db.db(DBNAME)
-
-      dbo.collection("accounts").findOne({address: address}, function(err, document){
-	if (document){
-	  //logger.debug("Fetching in DB %s", JSON.stringify(document))
-	  cb(document)
-	}
-	else {
-	  //logger.debug("User not found")
-	  cb('User not found')
-	}
+    
+    dbo.collection("accounts").findOne({address: address}, function(err, document){
+      if (document){
+	//logger.debug("Fetching in DB %s", JSON.stringify(document))
+	cb(document)
+      }
+      else {
+	//logger.debug("User not found")
+	cb('User not found')
+      }
     })
   })
 }

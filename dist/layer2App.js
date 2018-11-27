@@ -58,9 +58,7 @@ var Layer2App = function () {
       owner: this.owner,
       networkId: this.networkId
     });
-    // TODO: make updates event based
-    var updateLayer2State = this.updateLayer2State.bind(this);
-    setInterval(updateLayer2State, 1000);
+    this.getLayer2State.bind(this);
     this.update().catch(function (reason) {
       console.error('layer2App updating failed', reason);
     });
@@ -93,7 +91,7 @@ var Layer2App = function () {
             switch (_context.prev = _context.next) {
               case 0:
                 _context.next = 2;
-                return _promise2.default.all([this.updateBalance(), this.updateLayer2State()]);
+                return _promise2.default.all([this.updateBalance(), this.getLayer2State()]);
 
               case 2:
                 results = _context.sent;
@@ -148,7 +146,7 @@ var Layer2App = function () {
       return updateBalance;
     }()
   }, {
-    key: 'updateLayer2State',
+    key: 'getLayer2State',
     value: function () {
       var _ref3 = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee3() {
         var _this = this;
@@ -159,7 +157,7 @@ var Layer2App = function () {
             switch (_context3.prev = _context3.next) {
               case 0:
                 _context3.next = 2;
-                return this.script.updateLayer2State(function (state) {
+                return this.script.getLayer2State(function (state) {
                   _this.layer2State = state;
                   //console.log("layer 2 state ", state)
                   return _this.layer2State;
@@ -176,11 +174,11 @@ var Layer2App = function () {
         }, _callee3, this);
       }));
 
-      function updateLayer2State() {
+      function getLayer2State() {
         return _ref3.apply(this, arguments);
       }
 
-      return updateLayer2State;
+      return getLayer2State;
     }()
   }]);
   return Layer2App;

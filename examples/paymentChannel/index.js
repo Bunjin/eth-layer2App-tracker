@@ -15,10 +15,14 @@ class PaymentChannel extends SafeEventEmitter {
     this.layer2State = ''
     this.nodeUrl = opts.nodeUrl
     this.socket = ioClient(this.nodeUrl)
+    const updateLayer2State = this.updateLayer2State.bind(this)
+    this.socket.on("updateState", (data)=>{
+      console.log("SOCKET UPDATE STATE", data)
+      updateLayer2State(data)
+    })
     this.address = opts.address
     this.provider = opts.provider
     this.eth = new Eth(this.provider)
-    console.log(eth)
     this.contract = new EthContract(this.eth)
     this.Layer2AppContract = this.contract(abi)
     this.owner = opts.owner
@@ -93,9 +97,6 @@ class PaymentChannel extends SafeEventEmitter {
       {name: "sender", type: "Accounts"},
       {name: "recipient1", type: "Accounts"},
       {name: "recipient2", type: "Accounts"},
-      {name: "recipient3", type: "Accounts"},
-      {name: "recipient4", type: "Accounts"},
-      {name: "recipient5", type: "Accounts"}
     ]
     this.accounts = [
       {name: "address", type: "address"},
@@ -130,6 +131,7 @@ class PaymentChannel extends SafeEventEmitter {
       console.log("GETTING PREVIOUS SIG FROM USER")
       console.log(previousSignature)
       let message
+      let socketEvent
       if (previousSignature == "0x0"){
 	message  = {
 	  nonce: 0,
@@ -141,9 +143,15 @@ class PaymentChannel extends SafeEventEmitter {
 	  }
 	}
 
-	this.signMessage(message, "registerDeposit")
-	
+	this.signMessage(message, (signature)=>{
+	    socketEvent = "registerDeposit"
+	    console.log(socketEvent + " will be fired ", message, signature)	
+	    socket.emit(socketEvent, message, signature, ()=> {
+	      console.log(socketEvent + " fired ", message, signature)
+	    })
+	  })
       }
+      
       else {
 	
 	socket.emit("getMessageBySignature", previousSignature, async (previousMessage)=>{
@@ -163,7 +171,12 @@ class PaymentChannel extends SafeEventEmitter {
 	  previousValue = new BN(previousValue, 16)
 	  console.log("PREVIOUS VALUE", previousValue)
 	  message.sender.balance = previousValue.add(value).toJSON()
-	  this.signMessage(message, "registerDeposit")
+	  this.signMessage(message, (signature)=>{
+	    socketEvent = "registerDeposit"
+	    socket.emit(socketEvent, message, signature, ()=>{
+	      console.log(socketEvent + " fired ", message, signature)
+	    })
+	  })
 	})
 
       }
@@ -174,7 +187,7 @@ class PaymentChannel extends SafeEventEmitter {
   makePayment(params){
     console.log("MAKE PAYMENT")
     console.log(params)
-    let toAddress = params[0]
+    let toAddress = params[0].toLowerCase()
     let value = params[1]*1e18
     console.log("DEBUGDEBUG before BN")    
     console.log(value)
@@ -189,6 +202,7 @@ class PaymentChannel extends SafeEventEmitter {
       console.log("GETTING PREVIOUS SIG FROM USER")
       console.log(previousSignature)
       let message
+      let socketEvent
       if (previousSignature == "0x0"){
 	// first action must be register deposit
 	return
@@ -198,7 +212,8 @@ class PaymentChannel extends SafeEventEmitter {
 	socket.emit("getMessageBySignature", previousSignature, async (previousMessage)=>{
 	  console.log("PREVIOUS MESSAGE FROM USER")
 	  console.log(previousMessage)
-	  
+
+	  // TODO BN nonces
 	  message = previousMessage
 	  console.log(message)
 	  console.log(message.nonce)
@@ -211,30 +226,51 @@ class PaymentChannel extends SafeEventEmitter {
 	  let previousValue = message.sender.balance
 	  previousValue = new BN(previousValue, 16)
 	  console.log("PREVIOUS VALUE", previousValue)
-	  if (previousValue < value){
+	  if (previousValue.lt(value)){
 	    alert("not enough available deposit")
 	    return
 	  }
 	  message.sender.balance = previousValue.sub(value).toJSON()
+	  let previousRecipientValue
 	  if (message.recipient1){
 	    if (message.recipient1.address == toAddress){
 	      previousRecipientValue = new BN(message.recipient1.value, 16)
 	      message.recipient1.value = previousRecipientValue.add(value).toJSON()
 	    }
-	  }
-	  else{
-	      message.recipient1 = {
-		account: toAddress,
-		value: value.toJSON()
+	    else{
+	      if (message.recipient2 && message.recipient2.address){
+		if (message.recipient2.address == toAddress){
+		  previousRecipientValue = new BN(message.recipient2.value, 16)
+		  message.recipient2.value = previousRecipientValue.add(value).toJSON()
+		}
+		else {
+		  alert("Can't send to more than 2 recipients for now")
+		}
 	      }
-
+	      else{
+		message.recipient2 = {
+		  address: toAddress,
+		  value: value.toJSON()
+		}
+	      }
+	    }
 	  }
-    	  this.signMessage(message, "makePayment")
+	  else {
+	    message.recipient1 = {
+	      address: toAddress,
+	      value: value.toJSON()
+	    }
+	  }
+    	  this.signMessage(message, (signature)=>{
+	    socketEvent = "makePayment"
+	    console.log(socketEvent + " will be fired ", message, signature)
+	    socket.emit(socketEvent, message, signature, ()=> {
+	      console.log(socketEvent + " fired ", message, signature)
+	    })
+	  })
 	})
-
       }
     })
-
   }
 
   withdrawPayment(params){
@@ -251,7 +287,7 @@ class PaymentChannel extends SafeEventEmitter {
     return this.contract
   }
 
-  async signMessage(message, socketEvent){
+  async signMessage(message, cb){
     let socket = this.socket
     console.log(message)
     console.log(typeof(message))
@@ -286,22 +322,26 @@ class PaymentChannel extends SafeEventEmitter {
 	// console.log("r: ", r)
 	// console.log("s: ", s)
 	// console.log("v: ", v)
-	console.log(socketEvent + " will be fired ", message, signature)	
-	socket.emit(socketEvent, message, signature, ()=> {
-	  console.log(socketEvent + " fired ", message, signature)
-	})
+	cb(signature)
       }
     )
   }
 
-  async updateLayer2State(cb){
+  async getLayer2State(cb){
     let socket = this.socket
-    socket.emit("getState", this.owner, async (state)=>{
+    let owner = this.owner
+    console.log("Calling socket GET STATE FOR:", owner)
+    socket.emit("getState", owner, async (state)=>{
       this.layer2State = state
+      console.log("Got state: ", state)
       cb(state)
     })
   }
 
+  updateLayer2State(state){
+    this.layer2State = state
+  }
+  
   async updateValue(key) {
     console.log("updateValue", key)
     let methodName
