@@ -1,13 +1,26 @@
 # Eth Layer 2 APP Tracker 
 
-A JS module for tracking Ethereum Layer 2 Apps
+[Insert image]
+
+
+A JS module for tracking Ethereum Layer 2 Solutions/Apps (requires a layer 2 plugin specific to the layer 2 solutions)
+
+
+
 
 ## Installation
 
-`npm install eth-layer2App-tracker -S`
+clone this repo
+then `npm run compile` and in the package folder + metamask-extension use `npm link [...]` (see: https://github.com/MetaMask/metamask-extension/blob/develop/docs/developing-on-deps.md)
+
+## Specifications
+
+Creates a layer 2 tracker / wrapper around the specific layer 2 script
+
+see SPECS.md for more details
 
 
-## Dev notes:
+## Temp notes:
 
 The specific sub layer2 package should be iframed and ran in a secure fashion with an API to communicate with metamask to perform some actions and also to provide the state to metamask.
 
