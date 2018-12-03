@@ -43,17 +43,17 @@
 - layer2PrivateKeys(layer2KeyDerivationPath): Private ...
 
 ## Metamask - plugin communication:
--add layer 2 solution: request permission from user to install script that uses localDb and new derivationpath + has key control for this path
--getAccount: for the given derivation seed path only, derive a new account
--deposit: lock some eth via a layer1 usual metamask tx from a main account of the user into the layer2 solution contract previously added
--derive: layer2 can use
--persist: store in local db
--sign: via an account outside of the derivationpath (e.g. the depositer main account) because signing with derivated accounts can be done fully in layer2 script
--withdraw: make a 0eth tx to the layer 2 with some tx data (maybe we require some standard for that to avoid potential exploits? not sure if there are any though if we restrict to the layer2 solution contract)
--getLayer2State: metamask->plugin
--updateLayer2State: plugin->metamask
--inject layer2 actions: website<->metamask<->plugin
--expose layer2 state: website<->metamask<->plugin
+- add layer 2 solution: request permission from user to install script that uses localDb and new derivationpath + has key control for this path
+- getAccount: for the given derivation seed path only, derive a new account
+- deposit: lock some eth via a layer1 usual metamask tx from a main account of the user into the layer2 solution contract previously added
+- derive: layer2 can use
+- persist: store in local db
+- sign: via an account outside of the derivationpath (e.g. the depositer main account) because signing with derivated accounts can be done fully in layer2 script
+- withdraw: make a 0eth tx to the layer 2 with some tx data (maybe we require some standard for that to avoid potential exploits? not sure if there are any though if we restrict to the layer2 solution contract)
+- getLayer2State: metamask->plugin
+- updateLayer2State: plugin->metamask
+- inject layer2 actions: website<->metamask<->plugin
+- expose layer2 state: website<->metamask<->plugin
 
 
 ## Temp Notes
