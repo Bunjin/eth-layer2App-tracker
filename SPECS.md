@@ -47,6 +47,7 @@
 - getAccount: for the given derivation seed path only, derive a new account (may or may not require confirmation by user)
 - deposit: lock some eth via a layer1 usual metamask tx from a main account of the user into the layer2 solution contract previously added
 - persist: store in local db
+- getFromLocalDb: 
 - sign: via an account outside of the derivationpath (e.g. the depositer main account) because signing with derivated accounts can be done fully in layer2 script
 - withdraw: make a 0eth tx to the layer 2 with some tx data (maybe we require some standard for that to avoid potential exploits? not sure if there are any though if we restrict to the layer2 solution contract)
 - getLayer2State: metamask->plugin
@@ -60,6 +61,6 @@
 ## How should we isolate the layer2 script execution?
 
 ## Temp Notes
-Layer 2 means not only scalability solutions here (plasma, state channels), it means really a layer 2 plugin and app built on the evm layer 1, for any purpose. So this could work also potentially for privacy solutions Zk Snark / starks ... and more generally any app that's anchored in the evm by a smart contract and some actions/state (so even potentially a layer1 app ?)
+Layer 2 means not only scalability solutions here (plasma, state channels), it means really a layer 2 plugin and app built on the evm layer 1, for any purpose. So this could work also potentially for privacy solutions Zk Snark / starks ... and more generally any app that's anchored in the evm by a smart contract and some actions/state (so even potentially a layer1 app ?).
 
 should deposit/withdraw be merged in the plugin communications as "sign a layer1 tx to the layer2 contract address"?
