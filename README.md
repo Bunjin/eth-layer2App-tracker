@@ -17,7 +17,7 @@ then `npm run compile` and in the package folder + metamask-extension use `npm l
 
 Creates a layer 2 tracker / wrapper around the specific layer 2 script
 
-see SPECS.md for more details
+[see SPECS for more details](SPECS.md)
 
 
 ## Temp notes:
