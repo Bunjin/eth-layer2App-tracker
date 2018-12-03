@@ -12,10 +12,8 @@
  layer2NetworkUrl: (For now) Ws of the hub/server/operator (depending on the layer2 design) 
  layer2KeyDerivationPath: (Provided by layer 2 solution)
  layer2Script: npm package that contains the specific layer2 plugin code -- should be ran in a secure fashion
-	-layer2Script
-
 	-layer2ScriptInterface
-
+	
 	```
 	    this.layer2Interface = {
 	       actions:
