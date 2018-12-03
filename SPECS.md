@@ -17,7 +17,7 @@
 	```
 	    this.layer2Interface = {
 	       actions:
-	       [{name: "	makePayment",
+	       [{name: "makePayment",
 		 call:this.makePayment.bind(this),
 		 params:[{name:"toAddress",
 		 	 type:"address"},

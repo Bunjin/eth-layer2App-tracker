@@ -1,6 +1,8 @@
 # Eth Layer 2 APP Tracker 
 
-[Insert image]
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Bunjin/eth-layer2App-tracker/develop/metamask-lightning.jpg">
+</p>
 
 
 A JS module for tracking Ethereum Layer 2 Solutions/Apps (requires a layer 2 plugin specific to the layer 2 solutions)
