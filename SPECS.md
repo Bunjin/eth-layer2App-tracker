@@ -44,7 +44,7 @@
 
 ## Metamask - plugin communication:
 - add layer 2 solution: request permission from user to install script that uses localDb and new derivationpath + has key control for this path
-- getAccount: for the given derivation seed path only, derive a new account
+- getAccount: for the given derivation seed path only, derive a new account (may or may not require confirmation by user)
 - deposit: lock some eth via a layer1 usual metamask tx from a main account of the user into the layer2 solution contract previously added
 - persist: store in local db
 - sign: via an account outside of the derivationpath (e.g. the depositer main account) because signing with derivated accounts can be done fully in layer2 script
@@ -54,6 +54,10 @@
 - inject layer2 actions: website<->metamask<->plugin
 - expose layer2 state: website<->metamask<->plugin
 
+- display layer2 UI: allows to show some confirmation screens from the layer2 script
+  We could even better integrated some layer2 script's confirmation upon actions that require confirmation by the user
+
+## How should we isolate the layer2 script execution?
 
 ## Temp Notes
 Layer 2 means not only scalability solutions here (plasma, state channels), it means really a layer 2 plugin and app built on the evm layer 1, for any purpose. So this could work also potentially for privacy solutions Zk Snark / starks ... and more generally any app that's anchored in the evm by a smart contract and some actions/state (so even potentially a layer1 app ?)
