@@ -1,7 +1,7 @@
 # Eth Layer 2 APP Tracker 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Bunjin/eth-layer2App-tracker/develop/metamask-lightning.jpg" style="width:50%; height:50%">
+  <img src="https://raw.githubusercontent.com/Bunjin/eth-layer2App-tracker/develop/metamask-lightning.jpg" style="width:100px; height:100px">
 </p>
 
 
