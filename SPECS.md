@@ -63,7 +63,10 @@ Current implementation uses a layer2 node for the layer 2 networking (broadcasti
 This layer 2 node is intented to be either ran locally by the user or used remotely (similar to infura).
 This mimics the current behavior of layer 1 Metamask and the EVM node (local parity/geth / remote parity or geth...)
 
-However the layer 2 script running in the plugin could itself contain "the layer 2 node" fully or partly and not only the signing. How much is fully embedded (p2p and serverless) into the metamask plugin can vary over 3 dimensions: layer 2 networking / layer 2 current state computation, verification and monitoring / layer 2 history sync and storage
+However the layer 2 script running in the plugin could itself contain "the layer 2 node" fully or partly and not only the signing. How much is fully embedded (p2p and serverless) into the metamask plugin can vary over 3 dimensions: 
+- layer 2 networking
+- layer 2 current state computation, verification and monitoring
+- layer 2 history sync and storage
 
 For instance, Counterfactual with playground seem to have layer 2 networking externalized (delegated to a hub). The current layer 2 state computation, storage and verification is internalized (they'd like to compute and store it into metamask). Regarding the layer 2 history sync and backup, they didn't implement it yet but they seem to be taking an approach of eternalisation for this through watchers (to be confirmed). My current implementation delegates and thus externalizes all 3 aspects to the local user or remote layer 2 node. 
 One could think of implentations that internalize the layer 2 current state computing/monitoring and also the layer 2 history sync using a p2p db.
