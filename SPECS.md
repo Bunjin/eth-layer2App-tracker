@@ -58,9 +58,25 @@
 - display layer2 UI: allows to show some confirmation screens from the layer2 script
   We could even better integrated some layer2 script's confirmation upon actions that require confirmation by the user
 
+## Notes on "layer2 nodes", networkUrl + local db, p2p dbs and on layer 2 logic (what's in the plugin and what's in the node)
+Current implementation uses a layer2 node for the layer 2 networking (broadcasting tx, fetching state), for the layer 2 actions history storage and for the layer 2 history verification (compute balances based on messages and verify/contest withdrawal requests). The layer 2 script in metamask only takes care of the signing and is communicating with the layer 2 node to receive/broadcast actions and update its state.
+This layer 2 node is intented to be either ran locally by the user or used remotely (similar to infura).
+This mimics the current behavior of layer 1 Metamask and the EVM node (local parity/geth / remote parity or geth...)
+
+However the layer 2 script running in the plugin could itself contain "the layer 2 node" fully or partly and not only the signing. How much is fully embedded (p2p and serverless) into the metamask plugin can vary over 3 dimensions: layer 2 networking / layer 2 current state computation, verification and monitoring / layer 2 history sync and storage
+
+For instance, Counterfactual with playground seem to have layer 2 networking externalized (delegated to a hub). The current layer 2 state computation, storage and verification is internalized (they'd like to compute and store it into metamask). Regarding the layer 2 history sync and backup, they didn't implement it yet but they seem to be taking an approach of eternalisation for this through watchers (to be confirmed). My current implementation delegates and thus externalizes all 3 aspects to the local user or remote layer 2 node. 
+One could think of implentations that internalize the layer 2 current state computing/monitoring and also the layer 2 history sync using a p2p db.
+
 ## How should we isolate the layer2 script execution?
+(based on Dan's notes)
+-Agoric
+-iFrames (similar to Hardware wallets-Metamask)
 
 ## Temp Notes
 Layer 2 means not only scalability solutions here (plasma, state channels), it means really a layer 2 plugin and app built on the evm layer 1, for any purpose. So this could work also potentially for privacy solutions Zk Snark / starks ... and more generally any app that's anchored in the evm by a smart contract and some actions/state (so even potentially a layer1 app ?).
 
 should deposit/withdraw be merged in the plugin communications as "sign a layer1 tx to the layer2 contract address"?
+
+Dan ideas about how these plugins can be seen as "networks" and even be layer1 blockchains themselves, such as Eth. One problem with this is that then plugins need to be able to communicate together and have permissions levels.
+also this would need a full rewrite.
