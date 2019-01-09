@@ -13,7 +13,7 @@ A JS module for tracking Ethereum Layer 2 Solutions/Apps (requires a layer 2 plu
 ## Installation
 
 clone this repo
-then `npm run compile` and in the package folder + metamask-extension use `npm link [...]` (see: https://github.com/MetaMask/metamask-extension/blob/develop/docs/developing-on-deps.md)
+then `npm run compile` and in the package folder + metamask-extension (layer2 branch) use `npm link [...]` (see: https://github.com/MetaMask/metamask-extension/blob/develop/docs/developing-on-deps.md)
 
 ## Specifications
 
